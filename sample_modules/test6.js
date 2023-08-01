@@ -1,0 +1,8 @@
+//THIS IS WRONG, BY DEFAULT ONLY 1 ANONYMOUS FUNCTION CAN BE EXPORTED PER FILE
+//LAST LINE OF MODULE EXPORTS ONLY WILL BE EXPORTED WHICH HAS A VALUE OF "lost" OR MAYBE IT WILL GENERATE AN ERROR 
+module.exports = () =>{
+ return 'hello'
+}
+module.exports = () =>{
+ return 'lost'
+}
