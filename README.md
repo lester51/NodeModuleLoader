@@ -10,3 +10,7 @@ Want to use? Currently I didn't make it an NPM Package yet so if you want to use
 ```
 git clone https://github.com/lester51/NodeModuleLoader
 ```
+and to run a test
+```js
+node index //node index.js
+```
