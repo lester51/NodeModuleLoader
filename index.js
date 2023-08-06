@@ -2,9 +2,14 @@
 const requires = require('./moduleLoader.js')
 
 /*
-* params@{directory} > location of your local modules you want to import.
+* @params {<array>|<string>} location of your local modules you want to import.
 */
-let modulesLoaded = await requires('./sample_modules',__filename))
+
+//To load all local modules from multiple folders at once
+let modulesLoaded = await requires(__filename,['directory1','directory2','directory3'......])
+console.log(modulesLoaded)
+//To load all local modules from a single directory
+let modulesLoaded = await requires(__filename,'directory1')
 console.log(modulesLoaded)
 
 /* THIS IS THE SAMPLE LOADED MODULES OBJECT STRUCTURE
