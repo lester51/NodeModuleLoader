@@ -6,6 +6,9 @@
 - _Can load all local module from multiple directory just provide an array of directory(string)._
 - _Will not load/import the module if theres an invalid module or error on the code._
 
+#### New Feature (much faster)
+- _Skip checks for local modules like `../../folder/file.js` and core modules like `fs`._
+- _Checks custom modules that you add on `node_modules` folder that doesn't have `package.json`._
 
 Want to use? Currently I didn't make it an NPM Package yet so if you want to use it please clone this repository
 ```
