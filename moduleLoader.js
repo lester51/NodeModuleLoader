@@ -5,7 +5,12 @@ const { execSync, exec } = require("child_process");
 const isValidNPM = require("npm-exists");
 const strip = require("strip-comments");
 const { globPromise } = require("file-path-helper");
-const progress = require("smooth-progress");
+const util = require('util');
+//const watch = require('node-watch');
+
+const core_modules = "assert,buffer,child_process,console,cluster,crypto,dygram,dns,events,fs,http,http2,https,net,os,path,perf_hooks,readline,repl,stream,string_decoder,tls,tty,url,util,v8,vm,wasi,worker,zlib,fetch";
+
+const readDirectory = util.promisify(fs.readdir);
 
 var parent = module.parent;
 var parentFile = parent.filename;
@@ -15,62 +20,46 @@ delete require.cache[__filename];
 let requireChecker = async (dir) => {
   return new Promise((res, rej) => {
     fs.readFile(dir, "utf8", async function (err, data) {
-      let code = strip(data)
-        .match(/require\((.*?)\)/g)
-        .join()
-        .match(/((\"(.*?)\")|(\'(.*?)\')|(\`(.*?)\`))/g)
-        .join()
-        .replace(/[\"\'\`]/g, "")
-        .split(",");
+      let code = strip(data).match(/require\((.*?)\)/g).join().match(/((\"(.*?)\")|(\'(.*?)\')|(\`(.*?)\`))/g).join().replace(/[\"\'\`]/g,"").split(",");
       let boolArr = []; //,errRequire = []
+      //START OF LOOP
       for (let i = 0; i < code.length; ++i) {
-        let isNPM = await isValidNPM(code[i]).then((isNPM) => isNPM);
-        //let isNPMInstalled = await globPromise('node_modules/'+code[i]).then(filePathList => (filePathList.length!==0) ? true : false)
-        let isLocal = await globPromise(
-          code[i].split("/").splice(-2).join("/"),
-        ).then((filePathList) => (filePathList.length !== 0 ? true : false));
-        if (isNPM) {
-          await new Promise((resolve, reject) => {
-            exec(`node ${dir}`, (error, stdout, stderr) => {
-              if (error) {
-                reject(error);
-                return;
-              }
-              resolve(stdout);
-            });
-          }).catch((err) => {
-            const match = String(err).match(/Cannot find module '(.*)'/);
-            if (match && !match[1].startsWith(".")) {
-              let nodeScripts = eval(
-                `let a=()=>{arr=${
-                  err
-                    .toString()
-                    .match(/requireStack: \[(.*?)\]/g)[0]
-                    .match(/\[(.*?)\]/g)[0]
-                };return arr;};a();`,
-              )
-                .map((e) => `node ${e} &&`)
-                .join(" ")
-                .split("&&")
-                .filter((e) => e !== "")
-                .join("&&");
-              let install = execSync(
-                `npm i ${match[1]} --save --non-interactive --no-bin-links --ignore-engines --skip-integrity-check`,
-                { stdio: "inherit", encoding: "utf8" },
-              );
-              exec(`${nodeScripts}`, { stdio: "inherit", encoding: "utf8" });
-            } else {
-              //errRequire.push(code[i]);
-              boolArr.push(false);
-            }
-          });
-        }
-        if (isNPM || isLocal) boolArr.push(true);
+        let test = await readDirectory('node_modules/'+code[i]).catch(e=>String(e))
+        let isNPMInstalled = (!core_modules.split(',').includes(code[i])&&(Array.isArray(test)&&test.includes('package.json')))?true:false;
+        if (core_modules.split(',').includes(code[i])) boolArr.push(true);
+        else if (isNPMInstalled) boolArr.push(true);
         else {
-          //errRequire.push(code[i]);
-          boolArr.push(false);
+          let isNPM = await isValidNPM(code[i]).then(isNPM=>isNPM);
+          let isLocal = await globPromise(code[i].split("/").splice(-2).join("/")).then(filePathList=>(filePathList.length!==0?true:false));
+          if (isNPM) {
+            await new Promise((resolve, reject) => {
+              exec(`node ${dir}`, (error, stdout, stderr) => {
+                if (error) {
+                  reject(error);
+                  return;
+                }
+                resolve(stdout);
+              });
+            }).catch((err) => {
+              let match = String(err).match(/Cannot find module '(.*)'/);
+              if (match && !match[1].startsWith(".")) {
+                let nodeScripts = eval(`let a=()=>{arr=${err.toString().match(/requireStack: \[(.*?)\]/g)[0].match(/\[(.*?)\]/g)[0]};return arr;};a();`).map((e) => `node ${e} &&`).join(" ").split("&&").filter((e) => e !== "").join("&&");
+                execSync(`npm i ${match[1]} --save --non-interactive --no-bin-links --ignore-engines --skip-integrity-check`,{ stdio: "inherit", encoding: "utf8" });
+                exec(`${nodeScripts}`, { stdio: "inherit", encoding: "utf8" });
+              } else {
+                //errRequire.push(code[i]);
+                boolArr.push(false);
+              }
+            });
+          }
+          if (isNPM || isLocal) boolArr.push(true);
+          else {
+            //errRequire.push(code[i]);
+            boolArr.push(false);
+          }
         }
       }
+      //END OF LOOP
       try {
         if (!boolArr.includes(false))
           res("This module has no invalid required npm package");
@@ -90,6 +79,7 @@ module.exports = async (main, directory, opts) => {
     );
   if (!directory) throw new Error("No directory provided");
   let loadedFuncList = {},
+    filesToWatch = [],
     failed = 0,
     success = 0;
   let loader = async (dir) => {
@@ -99,6 +89,7 @@ module.exports = async (main, directory, opts) => {
     let libs = fs.readdirSync(dir);
     libs = libs.filter((e) => e.split(".")[e.split(".").length - 1] === "js");
     let files = [];
+    libs.map(e=>filesToWatch.push(dir+'/'+e))
     for (int = 0; int < libs.length; int++) {
       console.log(
         chalk.cyan.bold("[LOADER]"),
@@ -106,7 +97,7 @@ module.exports = async (main, directory, opts) => {
         chalk.bold(`Trying to load module "${libs[int]}"`),
       );
       let ts = process.hrtime();
-      await requireChecker(dir + "/" + libs[int])
+      await requireChecker(`${dir}/${libs[int]}`)
         .then(async (ok) => {
           files.push(libs[int]);
           success++;
@@ -115,9 +106,7 @@ module.exports = async (main, directory, opts) => {
             chalk.magenta.bold("[LOADER]"),
             chalk.bold("》"),
             chalk.green.bold(
-              `Module "${libs[int]}" took ${Math.floor(
-                (t[0] * 1000 + t[1] / 1e6) / 1000,
-              )} sec. to load!`,
+              `Module "${libs[int]}" took ${Math.floor((t[0] * 1000 + t[1] / 1e6) / 1000)} sec. to load!`,
             ),
           );
         })
@@ -189,17 +178,18 @@ module.exports = async (main, directory, opts) => {
     Object.assign(loadedFuncList, map);
   };
   if (Array.isArray(directory)) {
-    for (let _i = 0; _i < directory.length; _i++) {
-      await loader(directory[_i]);
-    }
-  } else if (typeof directory === "string") {
-    await loader(directory);
+    for (let _i = 0; _i < directory.length; _i++) await loader(directory[_i]);
   }
+  else if (typeof directory === "string") await loader(directory);
   console.log(
     chalk.magenta.bold("[RESULTS]"),
     chalk.bold("》"),
     chalk.green.bold(`\nLoaded Modules: ${success}`),
     chalk.red.bold(`\nFailed to load Modules: ${failed}`),
   );
+  //Object.assign(loadedFuncList,{filesToWatch:filesToWatch})
+  /*watch(filesToWatch,(event,name)=>{
+    console.log(event,name)
+  })*/
   return loadedFuncList;
 };
