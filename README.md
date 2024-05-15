@@ -7,28 +7,59 @@
 - _Will not load/import the module if theres an invalid module or error on the code._
 
 #### New Feature (much faster)
-- _Skip checks for local modules like `../../folder/file.js` and core modules like `fs`._
+- _Skip checks for local modules like `../../folder/file.js` and native modules like `fs` `assert` `process' etc.._
 - _Checks custom modules that you add on `node_modules` folder that doesn't have `package.json`._
 
-Want to use? Currently I didn't make it an NPM Package yet so if you want to use it please clone this repository
+# Installation
 ```
-git clone https://github.com/lester51/NodeModuleLoader
+npm i module-loader-installer
 ```
-and to run a test
-```js
-node index //node index.js
+
+# SUPPORTS BOTH CJS (require) AND ESM (import)
 ```
+//ECMASCRIPT MODULE
+import requires from 'module-loader-installer';
+
+//COMMON JS
+const requires = require('module-loader-installer');
+```
+
 ## Simple Usage
 ```js
-const requires = require('./moduleLoader.js')
+//ECMASCRIPT MODULE
+import requires from 'module-loader-installer';
+//COMMON JS
+const requires = require('module-loader-installer');
 
 (async()=>{
+/*
+* @params {<array>|<string>} location of your local modules you want to import.
+*/
 //To load all modules from multiple directories
-let modulesLoaded = await requires(__filename,['directory1','directory2','directory3'......])
+let modulesLoaded = await requires(__filename,['directory1','directory2','directory3',...])
 console.log(modulesLoaded)
 
 //To load all module from a single directory
 let modulesLoaded = await requires(__filename,'directory1')
 console.log(modulesLoaded)
+/* THIS IS THE SAMPLE LOADED MODULES OBJECT STRUCTURE
+//{ [fileName] : { [funcName] : [functionInside (anonymous/named)] } }
+{
+  test1: { a: [Function (anonymous)] },
+  test2: { a: [Function (anonymous)], b: [Function (anonymous)] },
+  test3: { a: [Function: a], b: [Function: b] },
+  test5: [Function (anonymous)],
+  test6: [Function (anonymous)],
+  test7: [Function (anonymous)] { T: [Function (anonymous)] }
+}
+
+//To access these exported modules
+console.log(modulesLoaded.test1.a())
+console.log(modulesLoaded.test2.a()) or console.log(modulesLoaded.test2.b())
+console.log(modulesLoaded.test3.a()) or console.log(modulesLoaded.test3.b())
+console.log(modulesLoaded.test5())
+console.log(modulesLoaded.test6()) //check test6.js file for more info.
+console.log(modulesLoaded.test7()) or console.log(modulesLoaded.test7.T())
+*/
 })()
 ```

@@ -1,0 +1,31 @@
+{
+  "name": "module-loader-installer",
+  "version": "1.0.0",
+  "description": "- _Load all functions of all your local modules at once just provide a folder path where your .js files located._ - _Auto install all missing dependencies/npm packages used by the .js files (by looking at requires at your code)._ - _Auto check if its a local module or npm package module._ - _Can load all local module from multiple directory just provide an array of directory(string)._ - _Will not load/import the module if theres an invalid module or error on the code._",
+  "main": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+       "import": "./dist/esm/index.js",
+       "require": "./dist/cjs/index.js",
+       "default": "./dist/esm/index.js"
+   },
+  "scripts": {
+    "build": "tsc --project tsconfig.esm.json & tsc --project tsconfig.cjs.json"
+  },
+  "dependencies": {
+    "chalk": "4.1.2",
+    "npm-exists": "1.0.1",
+    "strip-comments": "2.0.1",
+    "file-path-helper": "1.4.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lester51/NodeModuleLoader.git"
+  },
+  "author": "HackMeSenpai",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lester51/NodeModuleLoader/issues"
+  },
+  "homepage": "https://github.com/lester51/NodeModuleLoader#readme"
+}
