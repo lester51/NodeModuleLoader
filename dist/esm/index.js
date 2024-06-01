@@ -49,7 +49,7 @@ var parent = module.parent;
 var parentFile = parent.filename;
 var parentDir = path.dirname(parentFile);
 delete require.cache[__filename];
-var isBuiltIn = function (name) {
+var isCoreModule = function (name) {
     var nativeModules = Object.keys(process.binding('natives'));
     if (~nativeModules.indexOf(name))
         return true;
@@ -158,7 +158,7 @@ module.exports = function (main, directory, obj, opts) { return __awaiter(_this,
         switch (_a.label) {
             case 0:
                 if (!main)
-                    throw new Error('No location provided of .js file where you require "moduleLoader.js"\n\nHint: use "__filename" to get the full path with basename and extention.');
+                    throw new Error('No location provided of .js file where you require "module-loader-installer"\n\nHint: use "__filename" to get the full path with basename and extention.');
                 if (!directory)
                     throw new Error("No directory provided");
                 loadedFuncList = {}, filesToWatch = [], failed = 0, success = 0;

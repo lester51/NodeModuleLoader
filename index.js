@@ -17,7 +17,7 @@ var parentFile = parent.filename;
 var parentDir = path.dirname(parentFile);
 delete require.cache[__filename];
 
-let isBuiltIn = (name) => {
+let isCoreModule = (name) => {
   let nativeModules = Object.keys(process.binding('natives'));
   if (~nativeModules.indexOf(name)) return true;
   else return false;

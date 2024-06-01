@@ -1,13 +1,13 @@
 (async()=>{
-const requires = require('./index.js')
+const requires = require('module-loader-installer')
 
 /*
 * @params {<array>|<string>} location of your local modules you want to import.
 */
 
 //To load all local modules from multiple folders at once
-let modulesLoaded = await requires(__filename,['directory1','directory2','directory3'......])
-console.log(modulesLoaded)
+//let modulesLoaded = await requires(__filename,['directory1','directory2','directory3'......])
+//console.log(modulesLoaded)
 //To load all local modules from a single directory
 let modulesLoaded = await requires(__filename,'sample_modules')
 console.log(modulesLoaded)
